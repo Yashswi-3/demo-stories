@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo stories</title>
+<style>
+  :root { --ink:#14161a; --muted:#5d6470; --line:#e3e6eb; --bg:#f6f7f9; --accent:#0f766e; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: "DM Sans", -apple-system, "Segoe UI", sans-serif; color:var(--ink); background:var(--bg); }
+  main { max-width: 1120px; margin: 0 auto; padding: 56px 28px 40px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { color: var(--muted); margin: 0 0 32px; font-size: 16px; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .card { text-align:left; background:#fff; border:1px solid var(--line); border-radius:12px; padding:20px 22px 18px;
+          cursor:pointer; font:inherit; color:inherit; display:flex; gap:16px; transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .card:hover, .card:focus-visible { border-color: var(--accent); box-shadow: 0 6px 20px rgba(15,118,110,.12); transform: translateY(-1px); outline:none; }
+  .num { flex: 0 0 34px; height:34px; border-radius:50%; background:var(--accent); color:#fff; display:grid; place-items:center; font-weight:700; font-size:15px; }
+  .title { font-weight: 600; font-size: 16px; line-height: 1.35; margin: 2px 0 8px; }
+  .shows { font-size: 13.5px; color: var(--muted); line-height: 1.4; }
+  .meta { font-size: 12px; color: var(--accent); margin-top: 10px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 32px; }
+
+  #player { position: fixed; inset: 0; background: #000; display: none; z-index: 10; }
+  #player.open { display: block; }
+  #player iframe { width: 100%; height: 100%; border: 0; display: block; }
+  #hot { position: absolute; top: 0; left: 0; right: 0; height: 14px; z-index: 12; }
+  #bar { position: absolute; top: 0; left: 0; right: 0; z-index: 11; display:flex; align-items:center; gap:10px;
+         padding: 10px 14px; background: rgba(20,22,26,.88); color:#fff; font-size: 14px;
+         transform: translateY(-100%); transition: transform .18s; }
+  #hot:hover + #bar, #bar:hover { transform: translateY(0); }
+  #bar button { font: inherit; color:#fff; background: rgba(255,255,255,.12); border: 0; border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+  #bar button:hover { background: rgba(255,255,255,.24); }
+  #bar .where { flex: 1; text-align: center; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Demo stories</h1>
+  <p class="lede">Ten stories for a digital marketing and technology services firm. Click one to play it full screen. Click or use the arrow keys to move through it. Press Esc to come back here.</p>
+  <div class="grid" id="grid"></div>
+  <footer>Visualised — not a live system. Every company and person shown is invented.</footer>
+</main>
+
+<div id="player">
+  <iframe id="frame" allow="fullscreen; autoplay" title="Demo story"></iframe>
+  <div id="hot"></div>
+  <div id="bar">
+    <button id="back">&larr; All stories</button>
+    <button id="prev">&lsaquo; Previous story</button>
+    <span class="where" id="where"></span>
+    <button id="next">Next story &rsaquo;</button>
+  </div>
+</div>
+
+<script>
+const STORIES = [
+  ["us-70-deadline-moves", "A client moves the deadline in a meeting, and one reply decides who is told what", "Reading meetings · one approval updates every system", "Delivery · COO"],
+  ["us-16-meeting-to-board", "A meeting ends and its commitments are already on the board", "Meeting to owned tasks", "Delivery · COO"],
+  ["us-84-approval-overdue", "The client's approval on the creative has not come, and the launch is flagged at risk before anyone says so", "Noticing what did not happen", "Agency delivery · COO"],
+  ["us-78-feature-promise", "A feature promised in a sales demo is tied to the engineering ticket, and sales hears when its date moves", "Sales and engineering kept in step", "Engineering · Head of Sales"],
+  ["us-24-work-concentration", "One person is quietly carrying most of the open work, and you see it before something drops", "Patterns in workload over weeks", "Operations · COO"],
+  ["us-65-relationship-drifting", "A customer relationship that is drifting is visible weeks before anyone says it aloud", "Account health across every channel", "Leadership · CEO"],
+  ["us-85-webinar-follow-up", "Everyone who attended the webinar is followed up, and those who asked a question are called first", "Demand generation, prioritised follow-up", "Demand generation · Head of Marketing"],
+  ["us-72-competitor-shutting-down", "A competitor is shutting down, and marketing and demand generation each have a plan the same morning", "Research to a campaign proposal", "Marketing · Head of Marketing"],
+  ["us-33-deal-won-invoice", "A deal is won, and finance has the task to invoice the same hour", "Sales to finance handoff", "Finance · CFO"],
+  ["us-37-leaver-handover", "Someone resigns on a Friday, and what they knew is already written down", "Company memory", "People · CEO"],
+];
+
+const grid = document.getElementById("grid");
+STORIES.forEach(([slug, title, shows, meta], i) => {
+  const b = document.createElement("button");
+  b.className = "card";
+  b.innerHTML = `<span class="num">${i + 1}</span><span><div class="title"></div><div class="shows"></div><div class="meta"></div></span>`;
+  b.querySelector(".title").textContent = title;
+  b.querySelector(".shows").textContent = shows;
+  b.querySelector(".meta").textContent = meta;
+  b.onclick = () => open(i, true);
+  grid.appendChild(b);
+});
+
+const player = document.getElementById("player");
+const frame = document.getElementById("frame");
+let current = -1;
+
+function open(i, goFull) {
+  current = (i + STORIES.length) % STORIES.length;
+  frame.src = `./stories/${STORIES[current][0]}/`;
+  document.getElementById("where").textContent = `${current + 1} of ${STORIES.length} · ${STORIES[current][1]}`;
+  player.classList.add("open");
+  if (goFull && !document.fullscreenElement && player.requestFullscreen) player.requestFullscreen().catch(() => {});
+}
+function close() {
+  player.classList.remove("open");
+  frame.src = "about:blank";
+  current = -1;
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+frame.addEventListener("load", () => { try { frame.contentWindow.focus(); } catch (e) {} });
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && current >= 0) close(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && current >= 0) close(); });
+document.getElementById("back").onclick = close;
+document.getElementById("prev").onclick = () => { open(current - 1, false); };
+document.getElementById("next").onclick = () => { open(current + 1, false); };
+</script>
+</body>
+</html>

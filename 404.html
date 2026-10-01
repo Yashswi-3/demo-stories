@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Demo stories</title>
+<script>
+  // GitHub Pages has no single-page-app fallback: send a deep link back to its story's start, or to the list.
+  var m = location.pathname.match(/^(\/demo-stories\/stories\/[^\/]+\/)/);
+  location.replace(m ? m[1] : "/demo-stories/");
+</script>
+</head>
+<body></body>
+</html>
